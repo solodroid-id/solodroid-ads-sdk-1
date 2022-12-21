@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 
 import com.applovin.adview.AppLovinAdView;
 import com.applovin.sdk.AppLovinAd;
-import com.applovin.sdk.AppLovinAdClickListener;
 import com.applovin.sdk.AppLovinAdDisplayListener;
 import com.applovin.sdk.AppLovinAdLoadListener;
 import com.applovin.sdk.AppLovinAdSize;
@@ -30,6 +29,7 @@ import com.google.android.gms.ads.mediation.customevent.CustomEventBannerListene
  * Created by thomasso on 4/12/17.
  */
 
+@SuppressWarnings("deprecation")
 public class AppLovinCustomEventBanner implements CustomEventBanner {
 
     private static final boolean LOGGING_ENABLED = true;

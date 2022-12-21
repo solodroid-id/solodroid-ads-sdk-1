@@ -3,10 +3,10 @@ plugins {
 }
 
 android {
-    compileSdk 30
+    compileSdkVersion 33
     defaultConfig {
-        minSdk 21
-        targetSdk 30
+        minSdkVersion 21
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0.0"
         consumerProguardFiles "consumer-rules.pro"
@@ -23,7 +23,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     lintOptions {
-        disable 'GradleDependency'
+        disable 'GradleDependency', 'ExpiringTargetSdkVersion'
     }
 }
 
@@ -32,25 +32,31 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'], exclude: [])
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.3.0'
+    implementation 'com.google.android.gms:play-services-ads-identifier:18.0.1'
+    implementation 'com.google.android.gms:play-services-appset:16.0.2'
+    implementation 'com.google.android.gms:play-services-basement:18.1.0'
 
-    //Ad network
-    implementation 'com.google.android.gms:play-services-ads:20.6.0'
-    implementation 'com.startapp:inapp-sdk:4.9.2'
-    implementation 'com.applovin:applovin-sdk:11.1.3'
-    implementation 'com.facebook.android:audience-network-sdk:6.8.0'
-    implementation 'com.unity3d.ads:unity-ads:4.0.0'
-    implementation('com.mopub:mopub-sdk-banner:5.18.0@aar') {
-        transitive = true
-    }
-    implementation('com.mopub:mopub-sdk-fullscreen:5.18.0@aar') {
-        transitive = true
-    }
+    //Primary Ad Networks
+    implementation 'com.google.android.gms:play-services-ads:21.3.0'
+    implementation 'com.startapp:inapp-sdk:4.10.5'
+    implementation 'com.applovin:applovin-sdk:11.6.0'
+    implementation 'com.ironsource.sdk:mediationsdk:7.2.5'
+    implementation 'com.facebook.android:audience-network-sdk:6.12.0'
 
-    //Ad network mediation
-    implementation 'com.google.ads.mediation:facebook:6.8.0.0'
-    implementation 'com.applovin.mediation:google-adapter:20.6.0.0'
-    implementation 'com.applovin.mediation:facebook-adapter:6.8.0.2'
-    implementation 'com.mopub.mediation:facebookaudiencenetwork:6.7.0.0'
+    //AdMob mediation
+    implementation 'com.google.ads.mediation:applovin:11.5.5.0'
+    implementation 'com.google.ads.mediation:ironsource:7.2.5.0'
+    implementation 'com.google.ads.mediation:facebook:6.11.0.1'
+
+    //AppLovin mediation
+    implementation 'com.applovin.mediation:google-adapter:21.3.0.0'
+    implementation 'com.applovin.mediation:ironsource-adapter:7.2.5.0.0'
+    implementation 'com.applovin.mediation:facebook-adapter:6.12.0.0'
+
+    //ironSource mediation
+    implementation 'com.ironsource.adapters:admobadapter:4.3.31'
+    implementation 'com.ironsource.adapters:applovinadapter:4.3.34'
+    implementation 'com.ironsource.adapters:facebookadapter:4.3.38'
 
     //GDPR
     implementation 'com.google.android.ump:user-messaging-platform:2.0.0'

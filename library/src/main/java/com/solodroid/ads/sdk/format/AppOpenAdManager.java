@@ -7,9 +7,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.ads.AdError;
-import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import com.google.android.gms.ads.appopen.AppOpenAd;
 import com.solodroid.ads.sdk.util.OnShowAdCompleteListener;
 
@@ -17,7 +17,7 @@ import java.util.Date;
 
 public class AppOpenAdManager {
 
-    private static final String LOG_TAG = "AppOpenAdManager";
+    private static final String LOG_TAG = "AppOpenAd";
     private AppOpenAd appOpenAd = null;
     private boolean isLoadingAd = false;
     public boolean isShowingAd = false;
@@ -40,15 +40,15 @@ public class AppOpenAdManager {
      *
      * @param context the context of the activity that loads the ad
      */
-    public void loadAd(Context context, String appOpenAdUnitId) {
+    public void loadAd(Context context, String adManagerAppOpenAdUnitId) {
         // Do not load ad if there is an unused ad or one is already loading.
         if (isLoadingAd || isAdAvailable()) {
             return;
         }
 
         isLoadingAd = true;
-        AdRequest request = new AdRequest.Builder().build();
-        AppOpenAd.load(context, appOpenAdUnitId, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, new AppOpenAd.AppOpenAdLoadCallback() {
+        AdManagerAdRequest request = new AdManagerAdRequest.Builder().build();
+        AppOpenAd.load(context, adManagerAppOpenAdUnitId, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, new AppOpenAd.AppOpenAdLoadCallback() {
                     /**
                      * Called when an app open ad has loaded.
                      *

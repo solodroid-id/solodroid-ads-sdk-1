@@ -5,12 +5,17 @@ import static com.solodroid.ads.sdk.util.Constant.AD_STATUS_ON;
 import static com.solodroid.ads.sdk.util.Constant.APPLOVIN;
 import static com.solodroid.ads.sdk.util.Constant.APPLOVIN_DISCOVERY;
 import static com.solodroid.ads.sdk.util.Constant.APPLOVIN_MAX;
+import static com.solodroid.ads.sdk.util.Constant.FAN;
+import static com.solodroid.ads.sdk.util.Constant.FAN_BIDDING_ADMOB;
+import static com.solodroid.ads.sdk.util.Constant.FAN_BIDDING_AD_MANAGER;
+import static com.solodroid.ads.sdk.util.Constant.FAN_BIDDING_APPLOVIN_MAX;
+import static com.solodroid.ads.sdk.util.Constant.FAN_BIDDING_IRONSOURCE;
+import static com.solodroid.ads.sdk.util.Constant.GOOGLE_AD_MANAGER;
+import static com.solodroid.ads.sdk.util.Constant.IRONSOURCE;
 import static com.solodroid.ads.sdk.util.Constant.MOPUB;
 import static com.solodroid.ads.sdk.util.Constant.NONE;
 import static com.solodroid.ads.sdk.util.Constant.STARTAPP;
 import static com.solodroid.ads.sdk.util.Constant.UNITY;
-import static com.solodroid.ads.sdk.util.Constant.UNITY_ADS_BANNER_HEIGHT_MEDIUM;
-import static com.solodroid.ads.sdk.util.Constant.UNITY_ADS_BANNER_WIDTH_MEDIUM;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -31,20 +36,22 @@ import com.applovin.sdk.AppLovinAd;
 import com.applovin.sdk.AppLovinAdLoadListener;
 import com.applovin.sdk.AppLovinAdSize;
 import com.applovin.sdk.AppLovinSdkUtils;
+import com.facebook.ads.Ad;
+import com.facebook.ads.AdSize;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
-import com.mopub.mobileads.MoPubErrorCode;
-import com.mopub.mobileads.MoPubView;
+import com.google.android.gms.ads.admanager.AdManagerAdView;
+import com.ironsource.mediationsdk.ISBannerSize;
+import com.ironsource.mediationsdk.IronSource;
+import com.ironsource.mediationsdk.IronSourceBannerLayout;
+import com.ironsource.mediationsdk.logger.IronSourceError;
 import com.solodroid.ads.sdk.R;
 import com.solodroid.ads.sdk.helper.AppLovinCustomEventBanner;
 import com.solodroid.ads.sdk.util.Tools;
 import com.startapp.sdk.ads.banner.Banner;
 import com.startapp.sdk.ads.banner.BannerListener;
-import com.unity3d.services.banners.BannerErrorInfo;
-import com.unity3d.services.banners.BannerView;
-import com.unity3d.services.banners.UnityBannerSize;
 
 public class BannerAd {
 
@@ -53,17 +60,23 @@ public class BannerAd {
         private static final String TAG = "AdNetwork";
         private final Activity activity;
         private AdView adView;
-        private MoPubView moPubView;
+        private AdManagerAdView adManagerAdView;
+        private com.facebook.ads.AdView fanAdView;
         private AppLovinAdView appLovinAdView;
+        FrameLayout ironSourceBannerView;
+        private IronSourceBannerLayout ironSourceBannerLayout;
 
         private String adStatus = "";
         private String adNetwork = "";
         private String backupAdNetwork = "";
         private String adMobBannerId = "";
+        private String googleAdManagerBannerId = "";
+        private String fanBannerId = "";
         private String unityBannerId = "";
         private String appLovinBannerId = "";
         private String appLovinBannerZoneId = "";
         private String mopubBannerId = "";
+        private String ironSourceBannerId = "";
         private int placementStatus = 1;
         private boolean darkTheme = false;
         private boolean legacyGDPR = false;
@@ -97,6 +110,16 @@ public class BannerAd {
             return this;
         }
 
+        public Builder setGoogleAdManagerBannerId(String googleAdManagerBannerId) {
+            this.googleAdManagerBannerId = googleAdManagerBannerId;
+            return this;
+        }
+
+        public Builder setFanBannerId(String fanBannerId) {
+            this.fanBannerId = fanBannerId;
+            return this;
+        }
+
         public Builder setUnityBannerId(String unityBannerId) {
             this.unityBannerId = unityBannerId;
             return this;
@@ -114,6 +137,11 @@ public class BannerAd {
 
         public Builder setMopubBannerId(String mopubBannerId) {
             this.mopubBannerId = mopubBannerId;
+            return this;
+        }
+
+        public Builder setIronSourceBannerId(String ironSourceBannerId) {
+            this.ironSourceBannerId = ironSourceBannerId;
             return this;
         }
 
@@ -136,6 +164,7 @@ public class BannerAd {
             if (adStatus.equals(AD_STATUS_ON) && placementStatus != 0) {
                 switch (adNetwork) {
                     case ADMOB:
+                    case FAN_BIDDING_ADMOB:
                         FrameLayout adContainerView = activity.findViewById(R.id.admob_banner_view_container);
                         adContainerView.post(() -> {
                             adView = new AdView(activity);
@@ -179,6 +208,84 @@ public class BannerAd {
                         Log.d(TAG, adNetwork + " Banner Ad unit Id : " + adMobBannerId);
                         break;
 
+                    case GOOGLE_AD_MANAGER:
+                    case FAN_BIDDING_AD_MANAGER:
+                        FrameLayout googleAdContainerView = activity.findViewById(R.id.google_ad_banner_view_container);
+                        googleAdContainerView.post(() -> {
+                            adManagerAdView = new AdManagerAdView(activity);
+                            adManagerAdView.setAdUnitId(googleAdManagerBannerId);
+                            googleAdContainerView.removeAllViews();
+                            googleAdContainerView.addView(adManagerAdView);
+                            adManagerAdView.setAdSize(Tools.getAdSize(activity));
+                            adManagerAdView.loadAd(Tools.getGoogleAdManagerRequest());
+                            adManagerAdView.setAdListener(new AdListener() {
+                                @Override
+                                public void onAdClicked() {
+                                    super.onAdClicked();
+                                }
+
+                                @Override
+                                public void onAdClosed() {
+                                    super.onAdClosed();
+                                }
+
+                                @Override
+                                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                                    super.onAdFailedToLoad(loadAdError);
+                                    googleAdContainerView.setVisibility(View.GONE);
+                                    loadBackupBannerAd();
+                                }
+
+                                @Override
+                                public void onAdImpression() {
+                                    super.onAdImpression();
+                                }
+
+                                @Override
+                                public void onAdLoaded() {
+                                    super.onAdLoaded();
+                                    googleAdContainerView.setVisibility(View.VISIBLE);
+                                }
+
+                                @Override
+                                public void onAdOpened() {
+                                    super.onAdOpened();
+                                }
+                            });
+                        });
+                        break;
+
+                    case FAN:
+                        fanAdView = new com.facebook.ads.AdView(activity, fanBannerId, AdSize.BANNER_HEIGHT_50);
+                        RelativeLayout fanAdViewContainer = activity.findViewById(R.id.fan_banner_view_container);
+                        fanAdViewContainer.addView(fanAdView);
+                        com.facebook.ads.AdListener adListener = new com.facebook.ads.AdListener() {
+                            @Override
+                            public void onError(Ad ad, com.facebook.ads.AdError adError) {
+                                fanAdViewContainer.setVisibility(View.GONE);
+                                loadBackupBannerAd();
+                                Log.d(TAG, "Error load FAN : " + adError.getErrorMessage());
+                            }
+
+                            @Override
+                            public void onAdLoaded(Ad ad) {
+                                fanAdViewContainer.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onAdClicked(Ad ad) {
+
+                            }
+
+                            @Override
+                            public void onLoggingImpression(Ad ad) {
+
+                            }
+                        };
+                        com.facebook.ads.AdView.AdViewLoadConfig loadAdConfig = fanAdView.buildLoadAdConfig().withAdListener(adListener).build();
+                        fanAdView.loadAd(loadAdConfig);
+                        break;
+
                     case STARTAPP:
                         RelativeLayout startAppAdView = activity.findViewById(R.id.startapp_banner_view_container);
                         Banner banner = new Banner(activity, new BannerListener() {
@@ -207,39 +314,40 @@ public class BannerAd {
                         break;
 
                     case UNITY:
-                        RelativeLayout unityAdView = activity.findViewById(R.id.unity_banner_view_container);
-                        BannerView bottomBanner = new BannerView(activity, unityBannerId, new UnityBannerSize(UNITY_ADS_BANNER_WIDTH_MEDIUM, UNITY_ADS_BANNER_HEIGHT_MEDIUM));
-                        bottomBanner.setListener(new BannerView.IListener() {
-                            @Override
-                            public void onBannerLoaded(BannerView bannerView) {
-                                unityAdView.setVisibility(View.VISIBLE);
-                                Log.d("Unity_banner", "ready");
-                            }
-
-                            @Override
-                            public void onBannerClick(BannerView bannerView) {
-
-                            }
-
-                            @Override
-                            public void onBannerFailedToLoad(BannerView bannerView, BannerErrorInfo bannerErrorInfo) {
-                                Log.d("SupportTest", "Banner Error" + bannerErrorInfo);
-                                unityAdView.setVisibility(View.GONE);
-                                loadBackupBannerAd();
-                            }
-
-                            @Override
-                            public void onBannerLeftApplication(BannerView bannerView) {
-
-                            }
-                        });
-                        unityAdView.addView(bottomBanner);
-                        bottomBanner.load();
-                        Log.d(TAG, adNetwork + " Banner Ad unit Id : " + unityBannerId);
+//                        RelativeLayout unityAdView = activity.findViewById(R.id.unity_banner_view_container);
+//                        BannerView bottomBanner = new BannerView(activity, unityBannerId, new UnityBannerSize(UNITY_ADS_BANNER_WIDTH_MEDIUM, UNITY_ADS_BANNER_HEIGHT_MEDIUM));
+//                        bottomBanner.setListener(new BannerView.IListener() {
+//                            @Override
+//                            public void onBannerLoaded(BannerView bannerView) {
+//                                unityAdView.setVisibility(View.VISIBLE);
+//                                Log.d("Unity_banner", "ready");
+//                            }
+//
+//                            @Override
+//                            public void onBannerClick(BannerView bannerView) {
+//
+//                            }
+//
+//                            @Override
+//                            public void onBannerFailedToLoad(BannerView bannerView, BannerErrorInfo bannerErrorInfo) {
+//                                Log.d("SupportTest", "Banner Error" + bannerErrorInfo);
+//                                unityAdView.setVisibility(View.GONE);
+//                                loadBackupBannerAd();
+//                            }
+//
+//                            @Override
+//                            public void onBannerLeftApplication(BannerView bannerView) {
+//
+//                            }
+//                        });
+//                        unityAdView.addView(bottomBanner);
+//                        bottomBanner.load();
+//                        Log.d(TAG, adNetwork + " Banner Ad unit Id : " + unityBannerId);
                         break;
 
                     case APPLOVIN:
                     case APPLOVIN_MAX:
+                    case FAN_BIDDING_APPLOVIN_MAX:
                         RelativeLayout appLovinAdView = activity.findViewById(R.id.applovin_banner_view_container);
                         MaxAdView maxAdView = new MaxAdView(appLovinBannerId, activity);
                         maxAdView.setListener(new MaxAdViewAdListener() {
@@ -325,39 +433,54 @@ public class BannerAd {
                         break;
 
                     case MOPUB:
-                        RelativeLayout mopubAdView = activity.findViewById(R.id.mopub_banner_view_container);
-                        moPubView = new MoPubView(activity);
-                        moPubView.setAdUnitId(mopubBannerId);
-                        mopubAdView.addView(moPubView);
-                        moPubView.loadAd(MoPubView.MoPubAdSize.HEIGHT_50);
-                        moPubView.setBannerAdListener(new MoPubView.BannerAdListener() {
-                            @Override
-                            public void onBannerLoaded(@NonNull MoPubView moPubView) {
-                                mopubAdView.setVisibility(View.VISIBLE);
-                            }
+                        //Mopub has been acquired by AppLovin
+                        break;
 
-                            @Override
-                            public void onBannerFailed(MoPubView moPubView, MoPubErrorCode moPubErrorCode) {
-                                mopubAdView.setVisibility(View.GONE);
-                                loadBackupBannerAd();
-                            }
+                    case IRONSOURCE:
+                    case FAN_BIDDING_IRONSOURCE:
+                        ironSourceBannerView = activity.findViewById(R.id.ironsource_banner_view_container);
+                        ISBannerSize size = ISBannerSize.BANNER;
+                        ironSourceBannerLayout = IronSource.createBanner(activity, size);
+                        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+                        ironSourceBannerView.addView(ironSourceBannerLayout, 0, layoutParams);
+                        if (ironSourceBannerLayout != null) {
+                            ironSourceBannerLayout.setBannerListener(new com.ironsource.mediationsdk.sdk.BannerListener() {
+                                @Override
+                                public void onBannerAdLoaded() {
+                                    Log.d(TAG, "onBannerAdLoaded");
+                                    ironSourceBannerView.setVisibility(View.VISIBLE);
+                                }
 
-                            @Override
-                            public void onBannerClicked(MoPubView moPubView) {
+                                @Override
+                                public void onBannerAdLoadFailed(IronSourceError error) {
+                                    Log.d(TAG, "onBannerAdLoadFailed" + " " + error);
+                                    loadBackupBannerAd();
+                                }
 
-                            }
+                                @Override
+                                public void onBannerAdClicked() {
+                                    Log.d(TAG, "onBannerAdClicked");
+                                }
 
-                            @Override
-                            public void onBannerExpanded(MoPubView moPubView) {
+                                @Override
+                                public void onBannerAdScreenPresented() {
+                                    Log.d(TAG, "onBannerAdScreenPresented");
+                                }
 
-                            }
+                                @Override
+                                public void onBannerAdScreenDismissed() {
+                                    Log.d(TAG, "onBannerAdScreenDismissed");
+                                }
 
-                            @Override
-                            public void onBannerCollapsed(MoPubView moPubView) {
-
-                            }
-                        });
-                        Log.d(TAG, adNetwork + " Banner Ad unit Id : " + mopubBannerId);
+                                @Override
+                                public void onBannerAdLeftApplication() {
+                                    Log.d(TAG, "onBannerAdLeftApplication");
+                                }
+                            });
+                            IronSource.loadBanner(ironSourceBannerLayout, ironSourceBannerId);
+                        } else {
+                            Log.d(TAG, "IronSource.createBanner returned null");
+                        }
                         break;
 
                     case NONE:
@@ -374,6 +497,7 @@ public class BannerAd {
             if (adStatus.equals(AD_STATUS_ON) && placementStatus != 0) {
                 switch (backupAdNetwork) {
                     case ADMOB:
+                    case FAN_BIDDING_ADMOB:
                         FrameLayout adContainerView = activity.findViewById(R.id.admob_banner_view_container);
                         adContainerView.post(() -> {
                             adView = new AdView(activity);
@@ -416,6 +540,82 @@ public class BannerAd {
                         Log.d(TAG, adNetwork + " Banner Ad unit Id : " + adMobBannerId);
                         break;
 
+                    case GOOGLE_AD_MANAGER:
+                    case FAN_BIDDING_AD_MANAGER:
+                        FrameLayout googleAdContainerView = activity.findViewById(R.id.google_ad_banner_view_container);
+                        googleAdContainerView.post(() -> {
+                            adManagerAdView = new AdManagerAdView(activity);
+                            adManagerAdView.setAdUnitId(googleAdManagerBannerId);
+                            googleAdContainerView.removeAllViews();
+                            googleAdContainerView.addView(adManagerAdView);
+                            adManagerAdView.setAdSize(Tools.getAdSize(activity));
+                            adManagerAdView.loadAd(Tools.getGoogleAdManagerRequest());
+                            adManagerAdView.setAdListener(new AdListener() {
+                                @Override
+                                public void onAdClicked() {
+                                    super.onAdClicked();
+                                }
+
+                                @Override
+                                public void onAdClosed() {
+                                    super.onAdClosed();
+                                }
+
+                                @Override
+                                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                                    super.onAdFailedToLoad(loadAdError);
+                                    googleAdContainerView.setVisibility(View.GONE);
+                                }
+
+                                @Override
+                                public void onAdImpression() {
+                                    super.onAdImpression();
+                                }
+
+                                @Override
+                                public void onAdLoaded() {
+                                    super.onAdLoaded();
+                                    googleAdContainerView.setVisibility(View.VISIBLE);
+                                }
+
+                                @Override
+                                public void onAdOpened() {
+                                    super.onAdOpened();
+                                }
+                            });
+                        });
+                        break;
+
+                    case FAN:
+                        fanAdView = new com.facebook.ads.AdView(activity, fanBannerId, AdSize.BANNER_HEIGHT_50);
+                        RelativeLayout fanAdViewContainer = activity.findViewById(R.id.fan_banner_view_container);
+                        fanAdViewContainer.addView(fanAdView);
+                        com.facebook.ads.AdListener adListener = new com.facebook.ads.AdListener() {
+                            @Override
+                            public void onError(Ad ad, com.facebook.ads.AdError adError) {
+                                fanAdViewContainer.setVisibility(View.GONE);
+                                Log.d(TAG, "Error load FAN : " + adError.getErrorMessage());
+                            }
+
+                            @Override
+                            public void onAdLoaded(Ad ad) {
+                                fanAdViewContainer.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onAdClicked(Ad ad) {
+
+                            }
+
+                            @Override
+                            public void onLoggingImpression(Ad ad) {
+
+                            }
+                        };
+                        com.facebook.ads.AdView.AdViewLoadConfig loadAdConfig = fanAdView.buildLoadAdConfig().withAdListener(adListener).build();
+                        fanAdView.loadAd(loadAdConfig);
+                        break;
+
                     case STARTAPP:
                         RelativeLayout startAppAdView = activity.findViewById(R.id.startapp_banner_view_container);
                         Banner banner = new Banner(activity, new BannerListener() {
@@ -443,38 +643,39 @@ public class BannerAd {
                         break;
 
                     case UNITY:
-                        RelativeLayout unityAdView = activity.findViewById(R.id.unity_banner_view_container);
-                        BannerView bottomBanner = new BannerView(activity, unityBannerId, new UnityBannerSize(UNITY_ADS_BANNER_WIDTH_MEDIUM, UNITY_ADS_BANNER_HEIGHT_MEDIUM));
-                        bottomBanner.setListener(new BannerView.IListener() {
-                            @Override
-                            public void onBannerLoaded(BannerView bannerView) {
-                                unityAdView.setVisibility(View.VISIBLE);
-                                Log.d("Unity_banner", "ready");
-                            }
-
-                            @Override
-                            public void onBannerClick(BannerView bannerView) {
-
-                            }
-
-                            @Override
-                            public void onBannerFailedToLoad(BannerView bannerView, BannerErrorInfo bannerErrorInfo) {
-                                Log.d("SupportTest", "Banner Error" + bannerErrorInfo);
-                                unityAdView.setVisibility(View.GONE);
-                            }
-
-                            @Override
-                            public void onBannerLeftApplication(BannerView bannerView) {
-
-                            }
-                        });
-                        unityAdView.addView(bottomBanner);
-                        bottomBanner.load();
-                        Log.d(TAG, adNetwork + " Banner Ad unit Id : " + unityBannerId);
+//                        RelativeLayout unityAdView = activity.findViewById(R.id.unity_banner_view_container);
+//                        BannerView bottomBanner = new BannerView(activity, unityBannerId, new UnityBannerSize(UNITY_ADS_BANNER_WIDTH_MEDIUM, UNITY_ADS_BANNER_HEIGHT_MEDIUM));
+//                        bottomBanner.setListener(new BannerView.IListener() {
+//                            @Override
+//                            public void onBannerLoaded(BannerView bannerView) {
+//                                unityAdView.setVisibility(View.VISIBLE);
+//                                Log.d("Unity_banner", "ready");
+//                            }
+//
+//                            @Override
+//                            public void onBannerClick(BannerView bannerView) {
+//
+//                            }
+//
+//                            @Override
+//                            public void onBannerFailedToLoad(BannerView bannerView, BannerErrorInfo bannerErrorInfo) {
+//                                Log.d("SupportTest", "Banner Error" + bannerErrorInfo);
+//                                unityAdView.setVisibility(View.GONE);
+//                            }
+//
+//                            @Override
+//                            public void onBannerLeftApplication(BannerView bannerView) {
+//
+//                            }
+//                        });
+//                        unityAdView.addView(bottomBanner);
+//                        bottomBanner.load();
+//                        Log.d(TAG, adNetwork + " Banner Ad unit Id : " + unityBannerId);
                         break;
 
                     case APPLOVIN:
                     case APPLOVIN_MAX:
+                    case FAN_BIDDING_APPLOVIN_MAX:
                         RelativeLayout appLovinAdView = activity.findViewById(R.id.applovin_banner_view_container);
                         MaxAdView maxAdView = new MaxAdView(appLovinBannerId, activity);
                         maxAdView.setListener(new MaxAdViewAdListener() {
@@ -558,43 +759,72 @@ public class BannerAd {
                         break;
 
                     case MOPUB:
-                        RelativeLayout mopubAdView = activity.findViewById(R.id.mopub_banner_view_container);
-                        moPubView = new MoPubView(activity);
-                        moPubView.setAdUnitId(mopubBannerId);
-                        mopubAdView.addView(moPubView);
-                        moPubView.loadAd(MoPubView.MoPubAdSize.HEIGHT_50);
-                        moPubView.setBannerAdListener(new MoPubView.BannerAdListener() {
-                            @Override
-                            public void onBannerLoaded(@NonNull MoPubView moPubView) {
-                                mopubAdView.setVisibility(View.VISIBLE);
-                            }
+                        //Mopub has been acquired by AppLovin
+                        break;
 
-                            @Override
-                            public void onBannerFailed(MoPubView moPubView, MoPubErrorCode moPubErrorCode) {
-                                mopubAdView.setVisibility(View.GONE);
-                            }
+                    case IRONSOURCE:
+                    case FAN_BIDDING_IRONSOURCE:
+                        ironSourceBannerView = activity.findViewById(R.id.ironsource_banner_view_container);
+                        ISBannerSize size = ISBannerSize.BANNER;
+                        ironSourceBannerLayout = IronSource.createBanner(activity, size);
+                        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+                        ironSourceBannerView.addView(ironSourceBannerLayout, 0, layoutParams);
+                        if (ironSourceBannerLayout != null) {
+                            ironSourceBannerLayout.setBannerListener(new com.ironsource.mediationsdk.sdk.BannerListener() {
+                                @Override
+                                public void onBannerAdLoaded() {
+                                    Log.d(TAG, "onBannerAdLoaded");
+                                    ironSourceBannerView.setVisibility(View.VISIBLE);
+                                }
 
-                            @Override
-                            public void onBannerClicked(MoPubView moPubView) {
+                                @Override
+                                public void onBannerAdLoadFailed(IronSourceError error) {
+                                    Log.d(TAG, "onBannerAdLoadFailed" + " " + error);
+                                }
 
-                            }
+                                @Override
+                                public void onBannerAdClicked() {
+                                    Log.d(TAG, "onBannerAdClicked");
+                                }
 
-                            @Override
-                            public void onBannerExpanded(MoPubView moPubView) {
+                                @Override
+                                public void onBannerAdScreenPresented() {
+                                    Log.d(TAG, "onBannerAdScreenPresented");
+                                }
 
-                            }
+                                @Override
+                                public void onBannerAdScreenDismissed() {
+                                    Log.d(TAG, "onBannerAdScreenDismissed");
+                                }
 
-                            @Override
-                            public void onBannerCollapsed(MoPubView moPubView) {
-
-                            }
-                        });
-                        Log.d(TAG, adNetwork + " Banner Ad unit Id : " + mopubBannerId);
+                                @Override
+                                public void onBannerAdLeftApplication() {
+                                    Log.d(TAG, "onBannerAdLeftApplication");
+                                }
+                            });
+                            IronSource.loadBanner(ironSourceBannerLayout, ironSourceBannerId);
+                        } else {
+                            Log.d(TAG, "IronSource.createBanner returned null");
+                        }
                         break;
                 }
                 Log.d(TAG, "Banner Ad is enabled");
             } else {
                 Log.d(TAG, "Banner Ad is disabled");
+            }
+        }
+
+        public void destroyAndDetachBanner() {
+            if (adStatus.equals(AD_STATUS_ON) && placementStatus != 0) {
+                if (adNetwork.equals(IRONSOURCE) || backupAdNetwork.equals(IRONSOURCE)) {
+                    if (ironSourceBannerView != null) {
+                        Log.d(TAG, "ironSource banner is not null, ready to destroy");
+                        IronSource.destroyBanner(ironSourceBannerLayout);
+                        ironSourceBannerView.removeView(ironSourceBannerLayout);
+                    } else {
+                        Log.d(TAG, "ironSource banner is null");
+                    }
+                }
             }
         }
 

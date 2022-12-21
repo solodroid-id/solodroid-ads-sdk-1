@@ -2,6 +2,7 @@ package com.solodroid.ads.sdk.util;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.view.Display;
 
@@ -10,8 +11,10 @@ import com.google.ads.mediation.facebook.FacebookAdapter;
 import com.google.ads.mediation.facebook.FacebookExtras;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
-import com.solodroid.ads.sdk.gdpr.GDPR;
+import com.google.android.gms.ads.admanager.AdManagerAdRequest;
 import com.solodroid.ads.sdk.gdpr.LegacyGDPR;
+
+import java.nio.charset.StandardCharsets;
 
 public class Tools {
 
@@ -27,6 +30,10 @@ public class Tools {
         return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, adWidth);
     }
 
+    public static AdSize getAdSizeMREC() {
+        return AdSize.MEDIUM_RECTANGLE;
+    }
+
     public static AdRequest getAdRequest(Activity activity, Boolean legacyGDPR) {
         Bundle extras = new FacebookExtras().setNativeBanner(true).build();
         if (legacyGDPR) {
@@ -39,6 +46,20 @@ public class Tools {
                     .addNetworkExtrasBundle(FacebookAdapter.class, extras)
                     .build();
         }
+    }
+
+    public static AdManagerAdRequest getGoogleAdManagerRequest() {
+        return new AdManagerAdRequest.Builder()
+                .build();
+    }
+
+    public static String decode(String code) {
+        return decodeBase64(decodeBase64(decodeBase64(code)));
+    }
+
+    public static String decodeBase64(String code) {
+        byte[] valueDecoded = Base64.decode(code.getBytes(StandardCharsets.UTF_8), Base64.DEFAULT);
+        return new String(valueDecoded);
     }
 
 }
